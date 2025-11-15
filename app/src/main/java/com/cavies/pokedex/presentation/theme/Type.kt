@@ -1,4 +1,4 @@
-package com.cavies.pokedex.ui.theme
+package com.cavies.pokedex.presentation.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
