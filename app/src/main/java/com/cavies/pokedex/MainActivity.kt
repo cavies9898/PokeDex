@@ -10,7 +10,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
 import com.cavies.pokedex.presentation.theme.PokeDexTheme
 import com.cavies.pokedex.presentation.theme.ThemeViewModel
-import com.cavies.pokedex.presentation.ui.AppScreen
+import com.cavies.pokedex.presentation.ui.MainScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -19,12 +19,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            val navController = rememberNavController()
             val themeViewModel: ThemeViewModel = hiltViewModel()
             val isDarkMode by themeViewModel.isDarkMode.collectAsState()
-            val navController = rememberNavController()
 
             PokeDexTheme(darkTheme = isDarkMode) {
-                AppScreen(navController)
+                MainScreen(navController = navController)
             }
         }
     }
