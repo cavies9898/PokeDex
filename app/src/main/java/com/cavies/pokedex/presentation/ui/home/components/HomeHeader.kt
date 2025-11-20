@@ -1,4 +1,4 @@
-package com.cavies.pokedex.presentation.components
+package com.cavies.pokedex.presentation.ui.home.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
@@ -19,26 +21,22 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
+import com.cavies.pokedex.presentation.ui.components.RoundedShape
 
 @Composable
-fun PokedexHeader(
+fun HomeHeader(
     searchText: String,
-    onSearchTextChange: (String) -> Unit
+    onSearchTextChange: (String) -> Unit,
 ) {
-    var search by remember { mutableStateOf("") }
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -60,8 +58,8 @@ fun PokedexHeader(
                 fontWeight = FontWeight.Bold
             )
             SearchBar(
-                query = search,
-                onQueryChange = { search = it }
+                query = searchText,
+                onQueryChange = onSearchTextChange,
             )
             FilterButton()
         }
@@ -97,28 +95,27 @@ fun SearchBar(
     query: String,
     onQueryChange: (String) -> Unit
 ) {
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     TextField(
         value = query,
         onValueChange = onQueryChange,
-        placeholder = {
-            Text("Buscar por nombre", color = Color.Gray)
-        },
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Default.Search,
-                contentDescription = null,
-                tint = Color.Gray
-            )
-        },
+        placeholder = { Text("Buscar por nombre", color = Color.Gray) },
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray) },
         colors = TextFieldDefaults.colors(
             focusedContainerColor = Color.White.copy(alpha = 0.9f),
             unfocusedContainerColor = Color.White.copy(alpha = 0.9f),
             focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(30.dp))
+            .clip(RoundedCornerShape(30.dp)),
+        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+        keyboardActions = KeyboardActions(
+            onDone = {
+                keyboardController?.hide() // Esto cierra el teclado
+            }
+        )
     )
 }

@@ -1,4 +1,4 @@
-package com.cavies.pokedex.presentation.components
+package com.cavies.pokedex.presentation.ui.components
 
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Outline

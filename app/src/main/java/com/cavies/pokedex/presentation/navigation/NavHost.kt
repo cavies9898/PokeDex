@@ -9,7 +9,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.cavies.pokedex.presentation.ui.favorite.FavoritesScreen
 import com.cavies.pokedex.presentation.ui.home.HomeScreen
+import com.cavies.pokedex.presentation.ui.settings.SettingsScreen
 import com.cavies.pokedex.presentation.ui.splash.SplashScreen
+import com.cavies.pokedex.presentation.ui.team.TeamScreen
 
 
 @Composable
@@ -46,9 +48,9 @@ fun AppNavHost(
     ) {
         composable(Routes.SPLASH) { SplashScreen() }
         composable(Routes.HOME) { HomeScreen() }
-//        composable(Routes.EQUIPO) { TeamScreen() }
+        composable(Routes.TEAM) { TeamScreen() }
         composable(Routes.FAVORITES) { FavoritesScreen() }
-//        composable(Routes.SETTINGS) { SettingsScreen() }
+        composable(Routes.SETTINGS) { SettingsScreen() }
 
 //        composable("${Routes.DETAIL}/{id}") {
 //            val id = it.arguments?.getString("id")!!

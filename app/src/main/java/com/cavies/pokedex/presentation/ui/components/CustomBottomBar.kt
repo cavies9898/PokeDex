@@ -1,4 +1,4 @@
-package com.cavies.pokedex.presentation.components
+package com.cavies.pokedex.presentation.ui.components
 
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar

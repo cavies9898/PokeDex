@@ -2,6 +2,7 @@ package com.cavies.pokedex.data.remote.model
 
 import com.google.gson.annotations.SerializedName
 
+/**data class from basic response api/pokemon */
 data class PokemonListResponse(
     val results: List<PokemonBasicDto>
 )
@@ -11,6 +12,7 @@ data class PokemonBasicDto(
     val url: String
 )
 
+/**data class from basic response api/pokemon/{id} */
 data class PokemonDetailResponse(
     val id: Int,
     val name: String,
@@ -23,9 +25,9 @@ data class PokemonTypeSlotDto(
 )
 
 data class PokemonTypeDto(
-    val name: String
+    val name: String,
+    val url: String
 )
-
 data class PokemonSpritesDto(
     @SerializedName("front_default") val imageUrl: String?,
     @SerializedName("other") val others: PokemonDetailOtherResponse
@@ -38,3 +40,5 @@ data class PokemonDetailOtherResponse(
 data class FrontDefaultResponse(
     @SerializedName("front_default") val imageUrl: String?
 )
+
+/**Pokemon Type Response*/
