@@ -1,16 +1,13 @@
 package com.cavies.pokedex.domain.repository
 
 import com.cavies.pokedex.domain.model.Pokemon
+import com.cavies.pokedex.presentation.ui.home.Categories
 
 interface PokemonRepository {
 
     // --- SQLite ---
-    suspend fun getPokemonsFromDb(): List<Pokemon>
-    suspend fun getTypesFromDb(): List<String>
-    suspend fun getTypesForPokemon(id: Int): List<String>
-
-    // --- API ---
-    suspend fun getPokemonImageUrl(id: Int): String?
+    suspend fun getPokemons(): List<Pokemon>
+    suspend fun getCategories(): Categories
 
     // --- Room ---
     suspend fun getFavoriteIds(): List<Int>

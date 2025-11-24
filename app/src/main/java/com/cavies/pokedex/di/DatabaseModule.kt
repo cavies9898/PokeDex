@@ -49,7 +49,7 @@ object DatabaseModule {
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
-            "pokedex.db"
+            "pokedex_mobile.db"
         )
             .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
             .fallbackToDestructiveMigration()

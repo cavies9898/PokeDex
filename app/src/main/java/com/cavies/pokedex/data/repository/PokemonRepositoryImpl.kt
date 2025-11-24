@@ -1,136 +1,243 @@
 package com.cavies.pokedex.data.repository
 
-import android.content.Context
-import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
-import android.database.sqlite.SQLiteOpenHelper
 import com.cavies.pokedex.data.local.room.dao.FavoritesDao
-import com.cavies.pokedex.data.local.room.db.AppDatabase
-import com.cavies.pokedex.data.local.room.db.DatabaseHelper
 import com.cavies.pokedex.data.local.room.entity.FavoritesEntity
-import com.cavies.pokedex.data.remote.PokemonApiService
 import com.cavies.pokedex.domain.model.Pokemon
 import com.cavies.pokedex.domain.repository.PokemonRepository
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import android.util.Log
+import com.cavies.pokedex.domain.model.PokemonStats
+import com.cavies.pokedex.presentation.ui.home.Categories
+import kotlin.system.measureTimeMillis
 
 class PokemonRepositoryImpl @Inject constructor(
     private val sqliteDb: SQLiteDatabase,
     private val favoritesDao: FavoritesDao,
-    private val api: PokemonApiService
 ) : PokemonRepository {
 
-    // -----------------------------------------------------------------------------------------
-    // 1. GET POKEMONES desde SQLite (SOLO id + name)
-    // -----------------------------------------------------------------------------------------
-    override suspend fun getPokemonsFromDb(): List<Pokemon> = withContext(Dispatchers.IO) {
-        val result = mutableListOf<Pokemon>()
+    override suspend fun getPokemons(): List<Pokemon> = withContext(Dispatchers.IO) {
+        trackTime("getPokemonsWithStats") {
 
-        val cursor = sqliteDb.rawQuery(
-            "SELECT id, identifier FROM pokemon",
-            null
-        )
+            val result = mutableMapOf<Int, Pokemon>()
+            val statsTemp = mutableMapOf<Int, MutableMap<String, Int>>() // acumulador de stats
 
-        if (cursor.moveToFirst()) {
-            do {
-                val id = cursor.getInt(0)
-                val name = cursor.getString(1)
-
-                result.add(
-                    Pokemon(
-                        id = id,
-                        name = name,
-                        types = emptyList(),
-                        imageUrl = null,
-                        isFavorite = false
-                    )
-                )
-
-            } while (cursor.moveToNext())
-        }
-
-        cursor.close()
-        result
-    }
-
-    // -----------------------------------------------------------------------------------------
-    // 2. GET ALL TYPES desde SQLite (para filtros)
-    // -----------------------------------------------------------------------------------------
-    override suspend fun getTypesFromDb(): List<String> = withContext(Dispatchers.IO) {
-        val list = mutableListOf<String>()
-
-        val cursor = sqliteDb.rawQuery(
-            "SELECT identifier FROM types ORDER BY id",
-            null
-        )
-
-        if (cursor.moveToFirst()) {
-            do list.add(cursor.getString(0)) while (cursor.moveToNext())
-        }
-
-        cursor.close()
-        list
-    }
-
-    // -----------------------------------------------------------------------------------------
-    // 3. GET TYPES FOR POKEMON desde SQLite
-    // -----------------------------------------------------------------------------------------
-    override suspend fun getTypesForPokemon(id: Int): List<String> = withContext(Dispatchers.IO) {
-        val list = mutableListOf<String>()
-
-        val cursor = sqliteDb.rawQuery(
-            """
-            SELECT t.identifier
-            FROM pokemon_types pt
-            JOIN types t ON t.id = pt.type_id
-            WHERE pt.pokemon_id = ?
-            ORDER BY pt.slot
+            val cursor = sqliteDb.rawQuery(
+                """
+            SELECT DISTINCT
+                p.id,
+                psn.name AS pokemon_name,
+                p.identifier AS identifier,
+                t.identifier AS type,
+                
+                g.identifier AS generation,
+                rn.name AS region,
+            
+                h.identifier AS habitat,
+                c.identifier AS color,
+                s.identifier AS shape,
+            
+                st.identifier AS stat_name,
+                ps.base_stat AS stat_value,
+            
+                pt.slot AS type_slot
+            
+            FROM pokemon p
+            LEFT JOIN pokemon_species ps2 ON ps2.id = p.species_id
+            LEFT JOIN pokemon_species_names psn 
+                   ON psn.pokemon_species_id = ps2.id
+                   AND psn.local_language_id = 9
+        
+            LEFT JOIN generations g ON g.id = ps2.generation_id
+            LEFT JOIN region_names rn 
+                   ON rn.region_id = g.main_region_id 
+                   AND rn.local_language_id = 9
+        
+            LEFT JOIN pokemon_habitats h ON h.id = ps2.habitat_id
+            LEFT JOIN pokemon_colors c ON c.id = ps2.color_id
+            LEFT JOIN pokemon_shapes s ON s.id = ps2.shape_id
+        
+            LEFT JOIN pokemon_types pt ON pt.pokemon_id = p.id
+            LEFT JOIN types t ON t.id = pt.type_id
+        
+            LEFT JOIN pokemon_stats ps ON ps.pokemon_id = p.id
+            LEFT JOIN stats st ON st.id = ps.stat_id
+        
+            ORDER BY p.id, pt.slot;
             """.trimIndent(),
-            arrayOf(id.toString())
-        )
+                null
+            )
 
-        if (cursor.moveToFirst()) {
-            do list.add(cursor.getString(0)) while (cursor.moveToNext())
+            if (cursor.moveToFirst()) {
+                do {
+                    val id = cursor.getInt(0)
+                    val baseName = cursor.getString(1)           // nombre bonito
+                    val identifier = cursor.getString(2)         // para variantes
+                    val type = cursor.getString(3)
+                    val generation = cursor.getString(4)
+                    val region = cursor.getString(5)
+                    val habitat = cursor.getString(6)
+                    val color = cursor.getString(7)
+                    val shape = cursor.getString(8)
+                    val statName = cursor.getString(9)
+                    val statValue = cursor.getInt(10)
+
+                    val displayName = if (identifier.contains("-")) {
+                        identifier.split("-").joinToString(" ") { it.replaceFirstChar { c -> c.uppercaseChar() } }
+                    } else {
+                        baseName
+                    }
+
+                    val pokemon = result.getOrPut(id) {
+                        Pokemon(
+                            id = id,
+                            name = displayName,
+                            imageUrl = buildImageUrl(id),
+                            generation = generation,
+                            region = region,
+                            habitat = habitat,
+                            color = color,
+                            shape = shape,
+                            types = mutableListOf()
+                        )
+                    }
+
+                    type?.let { t ->
+                        val list = pokemon.types as MutableList
+                        if (!list.contains(t)) list.add(t)
+                    }
+
+                    statName?.let { name ->
+                        val map = statsTemp.getOrPut(id) { mutableMapOf() }
+                        map[name] = statValue
+                    }
+
+                } while (cursor.moveToNext())
+            }
+
+            cursor.close()
+
+            result.forEach { (id, pokemon) ->
+                val stats = statsTemp[id] ?: emptyMap()
+                val statObj = PokemonStats(
+                    hp = stats["hp"] ?: 0,
+                    attack = stats["attack"] ?: 0,
+                    defense = stats["defense"] ?: 0,
+                    specialAttack = stats["special-attack"] ?: 0,
+                    specialDefense = stats["special-defense"] ?: 0,
+                    speed = stats["speed"] ?: 0,
+                    total = stats.values.sum()
+                )
+                result[id] = pokemon.copy(stats = statObj)
+            }
+
+            result.values.toList()
+        }
+    }
+
+    override suspend fun getCategories(): Categories = withContext(Dispatchers.IO) {
+        trackTime("getFavoriteIds") {
+
+            val type = mutableListOf<String>()
+            val generation = mutableListOf<String>()
+            val region = mutableListOf<String>()
+            val habitat = mutableListOf<String>()
+            val color = mutableListOf<String>()
+            val shape = mutableListOf<String>()
+
+            val cursor = sqliteDb.rawQuery(
+                """
+        SELECT 'type' AS category_name, t.identifier AS value
+        FROM types t
+        
+        UNION
+        
+        SELECT 'generation', g.identifier
+        FROM generations g
+        
+        UNION
+        
+        SELECT 'region', rn.name
+        FROM region_names rn
+        WHERE rn.local_language_id = 9
+        
+        UNION
+        
+        SELECT 'habitat', h.identifier
+        FROM pokemon_habitats h
+        
+        UNION
+        
+        SELECT 'color', c.identifier
+        FROM pokemon_colors c
+        
+        UNION
+        
+        SELECT 'shape', s.identifier
+        FROM pokemon_shapes s;
+        """.trimIndent(), null
+            )
+
+            if (cursor.moveToFirst()) {
+                do {
+                    val category = cursor.getString(0)
+                    val value = cursor.getString(1)
+
+                    when (category) {
+                        "type" -> type.add(value)
+                        "generation" -> generation.add(value)
+                        "region" -> region.add(value)
+                        "habitat" -> habitat.add(value)
+                        "color" -> color.add(value)
+                        "shape" -> shape.add(value)
+                    }
+                } while (cursor.moveToNext())
+            }
+
+            cursor.close()
+
+            Categories(
+                type = type.sorted(),
+                generation = generation.sorted(),
+                region = region.sorted(),
+                habitat = habitat.sorted(),
+                color = color.sorted(),
+                shape = shape.sorted()
+            )
+        }
+    }
+
+
+    private fun buildImageUrl(id: Int): String =
+        "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$id.png"
+
+
+    override suspend fun getFavoriteIds(): List<Int> =
+        trackTime("getFavoriteIds") {
+            favoritesDao.getAllFavorites().map { it.id }
         }
 
-        cursor.close()
-        list
-    }
-
-    // -----------------------------------------------------------------------------------------
-    // 4. API → Obtener la imagen
-    // -----------------------------------------------------------------------------------------
-    override suspend fun getPokemonImageUrl(id: Int): String? {
-        return try {
-            api.getPokemonDetail(id).sprites.others.officialArtwork.imageUrl
-        } catch (e: Exception) {
-            null
+    override suspend fun addFavorite(id: Int, name: String) =
+        trackTime("addFavorite($id)") {
+            favoritesDao.insertFavorite(FavoritesEntity(id, name))
         }
-    }
 
-    // -----------------------------------------------------------------------------------------
-    // 5. ROOM → Obtener todos los favoritos
-    // -----------------------------------------------------------------------------------------
-    override suspend fun getFavoriteIds(): List<Int> {
-        return favoritesDao.getAllFavorites().map { it.id }
-    }
-
-    // -----------------------------------------------------------------------------------------
-    // 6. ROOM → Agregar favorito
-    // -----------------------------------------------------------------------------------------
-    override suspend fun addFavorite(id: Int, name: String) {
-        favoritesDao.insertFavorite(FavoritesEntity(id, name))
-    }
-
-    // -----------------------------------------------------------------------------------------
-    // 7. ROOM → Eliminar favorito
-    // -----------------------------------------------------------------------------------------
-    override suspend fun removeFavorite(id: Int) {
-        favoritesDao.deleteFavorite(id)
-    }
+    override suspend fun removeFavorite(id: Int) =
+        trackTime("removeFavorite($id)") {
+            favoritesDao.deleteFavorite(id)
+        }
 }
+
+
+inline fun <T> trackTime(tag: String, block: () -> T): T {
+    var result: T
+    val time = measureTimeMillis {
+        result = block()
+    }
+    Log.d("PERF", "$tag → ${time}ms")
+    return result
+}
+
+

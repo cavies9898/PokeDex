@@ -8,43 +8,13 @@ class GetPokemonsUseCase @Inject constructor(
     private val repo: PokemonRepository
 ) {
     suspend operator fun invoke(): List<Pokemon> {
-
-        val base = repo.getPokemonsFromDb()
-        val favorites = repo.getFavoriteIds()
+        val base = repo.getPokemons()
+        val favorites = repo.getFavoriteIds().toSet()
 
         return base.map { p ->
-
-            val types = repo.getTypesForPokemon(p.id)
-            val imageUrl = repo.getPokemonImageUrl(p.id)
-
-            Pokemon(
-                id = p.id,
-                name = p.name,
-                types = types,
-                imageUrl = imageUrl,
-                isFavorite = p.id in favorites,
+            p.copy(
+                isFavorite = favorites.contains(p.id)
             )
         }
-    }
-}
-
-class ToggleFavoriteUseCase @Inject constructor(
-    private val repo: PokemonRepository
-) {
-    suspend operator fun invoke(pokemon: Pokemon) {
-        if (pokemon.isFavorite) repo.removeFavorite(pokemon.id)
-        else repo.addFavorite(pokemon.id, pokemon.name)
-    }
-}
-
-class GetTypesUseCase @Inject constructor(
-    private val repo: PokemonRepository
-) {
-    suspend operator fun invoke(): List<String> = repo.getTypesFromDb()
-}
-
-class FilterByTypeUseCase @Inject constructor() {
-    operator fun invoke(all: List<Pokemon>, type: String): List<Pokemon> {
-        return all.filter { type in it.types }
     }
 }

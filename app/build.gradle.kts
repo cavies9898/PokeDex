@@ -95,4 +95,7 @@ dependencies {
     ksp(libs.androidx.room.compiler)
 
     implementation("io.coil-kt:coil-compose:2.5.0")
+
+    //Pager
+    implementation("androidx.compose.foundation:foundation:1.9.4")
 }

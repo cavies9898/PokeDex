@@ -6,5 +6,6 @@ object Routes {
     const val TEAM = "team"
     const val FAVORITES = "favorites"
     const val SETTINGS = "settings"
+    const val DETAIL = "detail"
 }
 
