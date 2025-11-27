@@ -1,4 +1,4 @@
-package com.cavies.pokedex.presentation.navigation
+package com.cavies.pokedex.presentation.ui.components.menu
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -9,6 +9,7 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Settings
+import com.cavies.pokedex.presentation.navigation.Routes
 
 val bottomBarItems = listOf(
     BottomBarItem(

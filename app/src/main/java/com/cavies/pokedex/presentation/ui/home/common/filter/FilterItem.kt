@@ -1,4 +1,4 @@
-package com.cavies.pokedex.presentation.ui.home.components
+package com.cavies.pokedex.presentation.ui.home.common.filter
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite

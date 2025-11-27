@@ -5,17 +5,14 @@ import com.cavies.pokedex.domain.repository.FavoriteRepository
 import com.cavies.pokedex.domain.repository.PokemonRepository
 import javax.inject.Inject
 
-class GetPokemonsUseCase @Inject constructor(
+class GetFavoritesUseCase @Inject constructor(
     private val repoPokemon: PokemonRepository,
     private val repoFavorites: FavoriteRepository
 ) {
     suspend operator fun invoke(): List<Pokemon> {
-        val base = repoPokemon.getPokemons()
-        val favorites = repoFavorites.getFavoriteIds().toSet()
-        return base.map { p ->
-            p.copy(
-                isFavorite = favorites.contains(p.id)
-            )
+        val favoriteIds = repoFavorites.getFavoriteIds()
+        return favoriteIds.mapNotNull { id ->
+            repoPokemon.getPokemonById(id)?.copy(isFavorite = true)
         }
     }
 }

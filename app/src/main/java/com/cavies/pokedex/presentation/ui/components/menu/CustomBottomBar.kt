@@ -1,4 +1,4 @@
-package com.cavies.pokedex.presentation.ui.components
+package com.cavies.pokedex.presentation.ui.components.menu
 
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -8,7 +8,6 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.cavies.pokedex.presentation.navigation.Routes
-import com.cavies.pokedex.presentation.navigation.bottomBarItems
 
 
 @Composable

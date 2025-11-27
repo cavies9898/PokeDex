@@ -1,6 +1,7 @@
-package com.cavies.pokedex.presentation.ui.home.components
+package com.cavies.pokedex.presentation.ui.components.colors
 
 import androidx.compose.ui.graphics.Color
+import kotlin.collections.get
 
 object PokemonTypeColor {
     val colors = mapOf(
@@ -25,6 +26,6 @@ object PokemonTypeColor {
     )
 
     fun get(type: String?): Color {
-        return colors[type] ?: Color.Gray
+        return colors[type] ?: Color.Companion.Gray
     }
 }

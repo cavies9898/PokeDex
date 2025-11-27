@@ -1,4 +1,4 @@
-package com.cavies.pokedex.presentation.ui.home.components
+package com.cavies.pokedex.presentation.ui.components.collection
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -31,12 +31,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow.Companion.Ellipsis
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import com.cavies.pokedex.domain.model.Pokemon
+import com.cavies.pokedex.presentation.ui.components.colors.PokemonTypeColor
 
 @Composable
 fun PokemonCard(
@@ -44,6 +48,8 @@ fun PokemonCard(
     onClickItem: (pokemon: Pokemon) -> Unit,
     onClickFavorite: (pokemon: Pokemon) -> Unit
 ) {
+
+    val context = LocalContext.current
     val backgroundColor = PokemonTypeColor.get(pokemon.types.firstOrNull())
     val strongerColor = backgroundColor.copy(
         red = (backgroundColor.red * 0.9f),
@@ -115,8 +121,16 @@ fun PokemonCard(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
+                val painter = rememberAsyncImagePainter(
+                    model = ImageRequest.Builder(context)
+                        .data(pokemon.imageUrl)
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
+                        .build()
+                )
+
                 Image(
-                    painter = rememberAsyncImagePainter(pokemon.imageUrl),
+                    painter = painter,
                     contentDescription = pokemon.name,
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
@@ -125,7 +139,6 @@ fun PokemonCard(
                         .align(Alignment.CenterHorizontally)
                         .padding(bottom = 4.dp)
                 )
-
 
                 Text(
                     text = pokemon.name,
@@ -161,21 +174,21 @@ fun PokemonCard(
                         }
                     }
 
-                    Spacer(modifier = Modifier.weight(1f))
+//                    Spacer(modifier = Modifier.weight(1f))
 
-                    IconButton(
-                        onClick = { onClickFavorite(pokemon) },
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (pokemon.isFavorite)
-                                Icons.Filled.CheckCircle
-                            else
-                                Icons.Filled.CheckCircle,
-                            contentDescription = "Check",
-                            tint = if (pokemon.isFavorite) Color.Green else Color.White
-                        )
-                    }
+//                    IconButton(
+//                        onClick = { onClickFavorite(pokemon) },
+//                        modifier = Modifier.size(28.dp)
+//                    ) {
+//                        Icon(
+//                            imageVector = if (pokemon.isFavorite)
+//                                Icons.Filled.CheckCircle
+//                            else
+//                                Icons.Filled.CheckCircle,
+//                            contentDescription = "Check",
+//                            tint = if (pokemon.isFavorite) Color.Green else Color.White
+//                        )
+//                    }
                 }
             }
         }

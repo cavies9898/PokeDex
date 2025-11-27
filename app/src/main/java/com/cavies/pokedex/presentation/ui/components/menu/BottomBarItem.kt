@@ -1,4 +1,4 @@
-package com.cavies.pokedex.presentation.navigation
+package com.cavies.pokedex.presentation.ui.components.menu
 
 import androidx.compose.ui.graphics.vector.ImageVector
 

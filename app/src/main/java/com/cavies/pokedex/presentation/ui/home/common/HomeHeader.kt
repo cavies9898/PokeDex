@@ -1,4 +1,4 @@
-package com.cavies.pokedex.presentation.ui.home.components
+package com.cavies.pokedex.presentation.ui.home.common
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -37,7 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.cavies.pokedex.presentation.ui.components.RoundedShape
+import com.cavies.pokedex.presentation.ui.components.shapes.RoundedShape
 
 @Composable
 fun HomeHeader(
@@ -52,7 +53,12 @@ fun HomeHeader(
             .fillMaxWidth()
             .height(240.dp)
             .background(
-                color = Color.Red,
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color.Red,
+                        Color(0xFFC62828)
+                    )
+                ),
                 shape = RoundedShape(bottomRadius = 60f)
             )
             .padding(24.dp)
