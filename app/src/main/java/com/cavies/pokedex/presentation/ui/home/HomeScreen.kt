@@ -29,30 +29,30 @@ fun HomeScreen() {
     val viewModel: HomeViewModel = hiltViewModel()
     val state = viewModel.uiState
 
-    var showCategoryDialog by remember { mutableStateOf(false) }
-    var showOptionsSheet by remember { mutableStateOf(false) }
+    var categoryDialogVisible by remember { mutableStateOf(false) }
+    var optionsSheetVisible by remember { mutableStateOf(false) }
 
     val gridState = rememberLazyGridState()
-    val listIdentity = state.filteredPokemons.map { it.id }
 
-    LaunchedEffect(listIdentity) {
+    LaunchedEffect(state.filteredPokemons) {
         gridState.scrollToItem(0)
     }
 
-    if (showCategoryDialog) {
+    if (categoryDialogVisible) {
         FilterDialog(
-            onDismiss = { showCategoryDialog = false },
+            onDismiss = { categoryDialogVisible = false },
             onFilterSelected = { item ->
-                showCategoryDialog = false
-                showOptionsSheet = item.hasOptions
+                categoryDialogVisible = false
                 viewModel.onFilterItemSelected(item)
+
+                optionsSheetVisible = item.hasOptions
             }
         )
     }
 
-    if (showOptionsSheet) {
+    if (optionsSheetVisible) {
         ModalBottomSheet(
-            onDismissRequest = { showOptionsSheet = false },
+            onDismissRequest = { optionsSheetVisible = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ) {
             FilterBottomSheet(
@@ -60,22 +60,24 @@ fun HomeScreen() {
                 selectedTypes = emptySet(),
                 onApply = { selectedList ->
                     viewModel.filterByCategory(selectedList)
-                    showOptionsSheet = false
+                    optionsSheetVisible = false
                 }
             )
         }
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
+
         HomeHeader(
             searchText = state.searchQuery,
             onSearchTextChange = viewModel::onSearchQueryChanged,
-            onFilterClick = { showCategoryDialog = true },
-            onSortAsc = { viewModel.sortAscending() },
-            onSortDesc = { viewModel.sortDescending() }
+            onFilterClick = { categoryDialogVisible = true },
+            onSortAsc = viewModel::sortAscending,
+            onSortDesc = viewModel::sortDescending
         )
 
         Box(modifier = Modifier.fillMaxSize()) {
+
             when {
                 state.isLoading -> Loading()
                 state.error != null -> Snackbar { Text(state.error) }

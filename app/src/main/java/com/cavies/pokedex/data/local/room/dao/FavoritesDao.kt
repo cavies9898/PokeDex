@@ -5,12 +5,13 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.cavies.pokedex.data.local.room.entity.FavoritesEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface FavoritesDao {
 
-    @Query("SELECT * FROM favorites")
-    suspend fun getAllFavorites(): List<FavoritesEntity>
+    @Query("SELECT id FROM favorites")
+    fun getFavoriteIdsFlow(): Flow<List<Int>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertFavorite(favorite: FavoritesEntity)

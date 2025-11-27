@@ -20,19 +20,17 @@ class FavoriteViewModel @Inject constructor(
     var uiState by mutableStateOf(FavoriteUiState())
         private set
 
-    fun loadFavoritePokemons() {
+    init {
+        observeFavorites()
+    }
+
+    private fun observeFavorites() {
         viewModelScope.launch {
-            uiState = uiState.copy(isLoading = true)
-            try {
-                val favoritePokemons = getFavorites()
+            getFavorites().collect { favorites ->
                 uiState = uiState.copy(
-                    favoritePokemons = favoritePokemons,
-                    isLoading = false
-                )
-            } catch (e: Exception) {
-                uiState = uiState.copy(
-                    error = e.message ?: "Error al cargar Pokémon",
-                    isLoading = false
+                    favoritePokemons = favorites,
+                    isLoading = false,
+                    error = null
                 )
             }
         }
@@ -41,7 +39,6 @@ class FavoriteViewModel @Inject constructor(
     fun onFavoriteClick(pokemon: Pokemon) {
         viewModelScope.launch {
             toggleFavorite(pokemon)
-            loadFavoritePokemons()
         }
     }
 }

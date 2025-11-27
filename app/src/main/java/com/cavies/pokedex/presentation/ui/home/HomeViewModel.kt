@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 class HomeViewModel @Inject constructor(
     private val getPokemons: GetPokemonsUseCase,
     private val toggleFavorite: ToggleFavoriteUseCase,
-    private val getCategories: GetCategoriesUseCase
+    private val getCategories: GetCategoriesUseCase,
 ) : ViewModel() {
 
     var uiState by mutableStateOf(HomeUiState())
@@ -28,67 +28,52 @@ class HomeViewModel @Inject constructor(
     private var cachedCategories: Categories? = null
 
     init {
-        loadPokemons()
+        observePokemons()
     }
 
-    private fun loadPokemons() {
+    private fun observePokemons() {
         viewModelScope.launch {
-            uiState = uiState.copy(isLoading = true)
-            try {
-                val pokemons = getPokemons()
+            getPokemons().collect { list ->
                 uiState = uiState.copy(
-                    pokemons = pokemons,
-                    filteredPokemons = pokemons,
-                    isLoading = false
-                )
-            } catch (e: Exception) {
-                uiState = uiState.copy(
-                    error = e.message ?: "Error al cargar Pokémon",
-                    isLoading = false
+                    pokemons = list,
+                    filteredPokemons = list,
+                    isLoading = false,
+                    error = null
                 )
             }
         }
     }
 
-    private suspend fun getCategoriesCached(): Categories {
-        return cachedCategories ?: getCategories().also { cachedCategories = it }
-    }
+    private suspend fun getCategoriesCached() =
+        cachedCategories ?: getCategories().also { cachedCategories = it }
 
     fun onFavoriteClick(pokemon: Pokemon) {
         viewModelScope.launch {
             toggleFavorite(pokemon)
-            val toggle: (Pokemon) -> Pokemon = {
-                if (it.id == pokemon.id) it.copy(isFavorite = !it.isFavorite) else it
-            }
-            uiState = uiState.copy(
-                pokemons = uiState.pokemons.map(toggle),
-                filteredPokemons = uiState.filteredPokemons.map(toggle)
-            )
         }
     }
 
     fun onSearchQueryChanged(query: String) {
         uiState = uiState.copy(searchQuery = query)
-        applyFilters()
+        applyFiltersAndSorting()
     }
 
     fun onFilterItemSelected(item: FilterItem) {
         viewModelScope.launch {
             item.directFilter?.let { direct ->
-                val result = direct(uiState.pokemons)
                 uiState = uiState.copy(
-                    filteredPokemons = result,
                     currentFilterItem = item,
-                    categorySelected = emptyList()
+                    categorySelected = emptyList(),
+                    filteredPokemons = direct(uiState.pokemons)
                 )
                 return@launch
             }
 
-            if (item == FilterItem.All) {
+            if (!item.hasOptions || item == FilterItem.All) {
                 uiState = uiState.copy(
-                    filteredPokemons = uiState.pokemons,
                     currentFilterItem = item,
-                    categorySelected = emptyList()
+                    categorySelected = emptyList(),
+                    filteredPokemons = uiState.pokemons
                 )
                 return@launch
             }
@@ -111,53 +96,53 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun filterByCategory(selectedOptions: List<String>) {
-        uiState = uiState.copy(categorySelected = selectedOptions)
-        applyFilters()
+    fun filterByCategory(selected: List<String>) {
+        uiState = uiState.copy(categorySelected = selected)
+        applyFiltersAndSorting()
     }
 
-    fun sortAscending() = applySorting(asc = true)
-    fun sortDescending() = applySorting(asc = false)
+
+    fun sortAscending() = applySorting(true)
+    fun sortDescending() = applySorting(false)
 
     private fun applySorting(asc: Boolean) {
-        val current = uiState.currentFilterItem
-        val sorted = uiState.filteredPokemons.sortedWith(
-            compareBy<Pokemon> {
-                when (current) {
-                    FilterItem.HP -> it.stats.hp
-                    FilterItem.Attack -> it.stats.attack
-                    FilterItem.Defense -> it.stats.defense
-                    FilterItem.SpecialAttack -> it.stats.specialAttack
-                    FilterItem.SpecialDefense -> it.stats.specialDefense
-                    FilterItem.Speed -> it.stats.speed
-                    FilterItem.Id -> it.id
-                    FilterItem.Alphabet -> it.name
-                    FilterItem.Total -> it.stats.total
-                    else -> it.id
-                }
-            }.let { cmp -> if (asc) cmp else cmp.reversed() }
-        )
+        val filter = uiState.currentFilterItem ?: FilterItem.Id
+
+        val comparator = when (filter) {
+            FilterItem.HP -> compareBy<Pokemon> { it.stats.hp }
+            FilterItem.Attack -> compareBy { it.stats.attack }
+            FilterItem.Defense -> compareBy { it.stats.defense }
+            FilterItem.SpecialAttack -> compareBy { it.stats.specialAttack }
+            FilterItem.SpecialDefense -> compareBy { it.stats.specialDefense }
+            FilterItem.Speed -> compareBy { it.stats.speed }
+            FilterItem.Alphabet -> compareBy { it.name }
+            FilterItem.Total -> compareBy { it.stats.total }
+            FilterItem.Id, FilterItem.All -> compareBy { it.id }
+            else -> return
+        }
+
+        val sorted = if (asc) {
+            uiState.filteredPokemons.sortedWith(comparator)
+        } else {
+            uiState.filteredPokemons.sortedWith(comparator.reversed())
+        }
+
         uiState = uiState.copy(filteredPokemons = sorted)
     }
 
-    private fun applyFilters() {
+
+    private fun applyFiltersAndSorting() {
         val filter = uiState.currentFilterItem
-        val selectedOptions = uiState.categorySelected.toSet()
-        val query = uiState.searchQuery.trim()
+        val query = uiState.searchQuery.trim().lowercase()
+        val selected = uiState.categorySelected.toSet()
 
         val filtered = uiState.pokemons.filter { p ->
             val matchesFilter = when {
-                filter == null || filter == FilterItem.All -> true
-                filter.selector != null -> {
-                    val values = filter.selector(p)
-                    values.any(selectedOptions::contains)
-                }
-
-                else -> true
+                filter?.selector == null -> true
+                selected.isEmpty() -> true
+                else -> filter.selector(p).any(selected::contains)
             }
-
-            val matchesSearch =
-                if (query.isBlank()) true else p.name.contains(query, ignoreCase = true)
+            val matchesSearch = p.name.contains(query, ignoreCase = true)
 
             matchesFilter && matchesSearch
         }
