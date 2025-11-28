@@ -1,5 +1,6 @@
 package com.cavies.pokedex.presentation.ui.home
 
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -22,15 +23,27 @@ class HomeViewModel @Inject constructor(
     private val getCategories: GetCategoriesUseCase,
 ) : ViewModel() {
 
+    // -------------------------------------------------------------
+    // STATE
+    // -------------------------------------------------------------
     var uiState by mutableStateOf(HomeUiState())
         private set
 
+    val gridState = LazyGridState()
     private var cachedCategories: Categories? = null
 
+
+    // -------------------------------------------------------------
+    // INIT
+    // -------------------------------------------------------------
     init {
         observePokemons()
     }
 
+
+    // -------------------------------------------------------------
+    // DATA FLOW
+    // -------------------------------------------------------------
     private fun observePokemons() {
         viewModelScope.launch {
             getPokemons().collect { list ->
@@ -47,37 +60,66 @@ class HomeViewModel @Inject constructor(
     private suspend fun getCategoriesCached() =
         cachedCategories ?: getCategories().also { cachedCategories = it }
 
+
+    // -------------------------------------------------------------
+    // FAVORITOS
+    // -------------------------------------------------------------
     fun onFavoriteClick(pokemon: Pokemon) {
         viewModelScope.launch {
             toggleFavorite(pokemon)
         }
     }
 
+
+    // -------------------------------------------------------------
+    // SCROLL CONTROL
+    // -------------------------------------------------------------
+    fun consumeScrollResetFlag() {
+        uiState = uiState.copy(shouldResetScroll = false)
+    }
+
+
+    // -------------------------------------------------------------
+    // BUSQUEDA
+    // -------------------------------------------------------------
     fun onSearchQueryChanged(query: String) {
-        uiState = uiState.copy(searchQuery = query)
+        uiState = uiState.copy(
+            searchQuery = query,
+            shouldResetScroll = true
+        )
         applyFiltersAndSorting()
     }
 
+
+    // -------------------------------------------------------------
+    // FILTROS
+    // -------------------------------------------------------------
     fun onFilterItemSelected(item: FilterItem) {
         viewModelScope.launch {
+            uiState = uiState.copy(
+                currentFilterItem = item,
+                shouldResetScroll = true
+            )
+
+            // Filtros directos
             item.directFilter?.let { direct ->
                 uiState = uiState.copy(
-                    currentFilterItem = item,
                     categorySelected = emptyList(),
                     filteredPokemons = direct(uiState.pokemons)
                 )
                 return@launch
             }
 
+            // Filtro sin opciones o "All"
             if (!item.hasOptions || item == FilterItem.All) {
                 uiState = uiState.copy(
-                    currentFilterItem = item,
                     categorySelected = emptyList(),
                     filteredPokemons = uiState.pokemons
                 )
                 return@launch
             }
 
+            // Obtener valores para opciones
             val categories = getCategoriesCached()
             val values = when (item) {
                 FilterItem.Type -> categories.type
@@ -89,19 +131,22 @@ class HomeViewModel @Inject constructor(
                 else -> emptyList()
             }
 
-            uiState = uiState.copy(
-                currentFilterItem = item,
-                categorySelected = values
-            )
+            uiState = uiState.copy(categorySelected = values)
         }
     }
 
     fun filterByCategory(selected: List<String>) {
-        uiState = uiState.copy(categorySelected = selected)
+        uiState = uiState.copy(
+            categorySelected = selected,
+            shouldResetScroll = true
+        )
         applyFiltersAndSorting()
     }
 
 
+    // -------------------------------------------------------------
+    // ORDENAMIENTO
+    // -------------------------------------------------------------
     fun sortAscending() = applySorting(true)
     fun sortDescending() = applySorting(false)
 
@@ -121,16 +166,21 @@ class HomeViewModel @Inject constructor(
             else -> return
         }
 
-        val sorted = if (asc) {
+        val sorted = if (asc)
             uiState.filteredPokemons.sortedWith(comparator)
-        } else {
+        else
             uiState.filteredPokemons.sortedWith(comparator.reversed())
-        }
 
-        uiState = uiState.copy(filteredPokemons = sorted)
+        uiState = uiState.copy(
+            filteredPokemons = sorted,
+            shouldResetScroll = true
+        )
     }
 
 
+    // -------------------------------------------------------------
+    // APLICAR FILTROS + BUSQUEDA + ORDENAMIENTO
+    // -------------------------------------------------------------
     private fun applyFiltersAndSorting() {
         val filter = uiState.currentFilterItem
         val query = uiState.searchQuery.trim().lowercase()
@@ -142,6 +192,7 @@ class HomeViewModel @Inject constructor(
                 selected.isEmpty() -> true
                 else -> filter.selector(p).any(selected::contains)
             }
+
             val matchesSearch = p.name.contains(query, ignoreCase = true)
 
             matchesFilter && matchesSearch

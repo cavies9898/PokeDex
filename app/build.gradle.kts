@@ -98,4 +98,8 @@ dependencies {
 
     //Pager
     implementation("androidx.compose.foundation:foundation:1.9.4")
+
+    //Chunks
+    implementation("androidx.paging:paging-runtime:3.2.0")
+    implementation("androidx.paging:paging-compose:1.0.0-alpha20")
 }

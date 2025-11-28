@@ -10,5 +10,6 @@ data class HomeUiState(
     val categorySelected: List<String> = emptyList(),
     val currentFilterItem: FilterItem? = null,
     val searchQuery: String = "",
+    val shouldResetScroll: Boolean = false,
     val error: String? = null
 )

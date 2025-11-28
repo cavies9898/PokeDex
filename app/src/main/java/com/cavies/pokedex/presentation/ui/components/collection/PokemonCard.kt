@@ -1,6 +1,5 @@
 package com.cavies.pokedex.presentation.ui.components.collection
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Card
@@ -26,9 +24,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -36,7 +34,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow.Companion.Ellipsis
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.rememberAsyncImagePainter
+import coil.ImageLoader
+import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.cavies.pokedex.domain.model.Pokemon
@@ -45,6 +44,8 @@ import com.cavies.pokedex.presentation.ui.components.colors.PokemonTypeColor
 @Composable
 fun PokemonCard(
     pokemon: Pokemon,
+    modifier: Modifier,
+    imageLoader: ImageLoader,
     onClickItem: (pokemon: Pokemon) -> Unit,
     onClickFavorite: (pokemon: Pokemon) -> Unit
 ) {
@@ -56,10 +57,19 @@ fun PokemonCard(
         green = (backgroundColor.green * 0.9f),
         blue = (backgroundColor.blue * 0.9f)
     )
+    val imageRequest = remember(pokemon.imageUrl) {
+        ImageRequest.Builder(context)
+            .data(pokemon.imageUrl)
+            .diskCachePolicy(CachePolicy.ENABLED)
+            .memoryCachePolicy(CachePolicy.ENABLED)
+            .size(300, 300)
+            .crossfade(true)
+            .build()
+    }
 
     ElevatedCard(
         onClick = { onClickItem(pokemon) },
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(250.dp),
         shape = RoundedCornerShape(12.dp),
@@ -68,7 +78,6 @@ fun PokemonCard(
         )
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-
             Box(
                 modifier = Modifier
                     .size(160.dp)
@@ -78,7 +87,6 @@ fun PokemonCard(
                         color = Color.White.copy(alpha = 0.15f),
                         shape = CircleShape
                     )
-                    .blur(40.dp)
             )
 
             Box(
@@ -121,16 +129,9 @@ fun PokemonCard(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                val painter = rememberAsyncImagePainter(
-                    model = ImageRequest.Builder(context)
-                        .data(pokemon.imageUrl)
-                        .diskCachePolicy(CachePolicy.ENABLED)
-                        .memoryCachePolicy(CachePolicy.ENABLED)
-                        .build()
-                )
-
-                Image(
-                    painter = painter,
+                AsyncImage(
+                    model = imageRequest,
+                    imageLoader = imageLoader,
                     contentDescription = pokemon.name,
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
@@ -173,22 +174,6 @@ fun PokemonCard(
                             )
                         }
                     }
-
-//                    Spacer(modifier = Modifier.weight(1f))
-
-//                    IconButton(
-//                        onClick = { onClickFavorite(pokemon) },
-//                        modifier = Modifier.size(28.dp)
-//                    ) {
-//                        Icon(
-//                            imageVector = if (pokemon.isFavorite)
-//                                Icons.Filled.CheckCircle
-//                            else
-//                                Icons.Filled.CheckCircle,
-//                            contentDescription = "Check",
-//                            tint = if (pokemon.isFavorite) Color.Green else Color.White
-//                        )
-//                    }
                 }
             }
         }

@@ -55,8 +55,8 @@ fun HomeHeader(
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color.Red,
-                        Color(0xFFC62828)
+                        Color(0xFFC62828),
+                        Color.Red
                     )
                 ),
                 shape = RoundedShape(bottomRadius = 60f)

@@ -1,24 +1,20 @@
 package com.cavies.pokedex.presentation.ui.components.collection
 
-import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import coil.ImageLoader
+import coil.memory.MemoryCache
+import coil.request.CachePolicy
 import com.cavies.pokedex.domain.model.Pokemon
 
 
@@ -31,8 +27,16 @@ fun PokemonGrid(
 ) {
     val context = LocalContext.current
 
-    LaunchedEffect(pokemons) {
-        preloadPokemonImages(context, pokemons)
+    val imageLoader = remember {
+        ImageLoader.Builder(context)
+            .memoryCache {
+                MemoryCache.Builder(context)
+                    .maxSizePercent(0.1)
+                    .build()
+            }
+            .diskCachePolicy(CachePolicy.ENABLED)
+            .crossfade(true)
+            .build()
     }
 
     LazyVerticalGrid(
@@ -46,8 +50,10 @@ fun PokemonGrid(
         items(pokemons, key = { it.id }) { pokemon ->
             PokemonCard(
                 pokemon = pokemon,
-                onClickItem = { Log.d("DEV_DEBUG", "${pokemon.name} Clicked") },
-                onClickFavorite = { onFavoriteClick(pokemon) }
+                imageLoader = imageLoader,
+                onClickItem = {  },
+                onClickFavorite = { onFavoriteClick(pokemon) },
+                modifier = Modifier.animateItem()
             )
         }
     }
