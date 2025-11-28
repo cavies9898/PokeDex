@@ -15,7 +15,7 @@ class PokemonRepositoryImpl @Inject constructor(
     override suspend fun getPokemons(): List<Pokemon> = withContext(Dispatchers.IO) {
 
         val result = mutableMapOf<Int, Pokemon>()
-        val statsTemp = mutableMapOf<Int, MutableMap<String, Int>>() // acumulador de stats
+        val statsTemp = mutableMapOf<Int, MutableMap<String, Int>>()
 
         val cursor = sqliteDb.rawQuery(
             """
@@ -66,8 +66,8 @@ class PokemonRepositoryImpl @Inject constructor(
         if (cursor.moveToFirst()) {
             do {
                 val id = cursor.getInt(0)
-                val baseName = cursor.getString(1)           // nombre bonito
-                val identifier = cursor.getString(2)         // para variantes
+                val baseName = cursor.getString(1)
+                val identifier = cursor.getString(2)
                 val type = cursor.getString(3)
                 val generation = cursor.getString(4)
                 val region = cursor.getString(5)
@@ -256,8 +256,6 @@ class PokemonRepositoryImpl @Inject constructor(
             total = stats.values.sum()
         )
     }
-
-
 
 
     private fun buildImageUrl(id: Int): String =

@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,61 +33,49 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.cavies.pokedex.domain.model.Pokemon
 import com.cavies.pokedex.presentation.ui.components.collection.PokemonGrid
 import com.cavies.pokedex.presentation.ui.components.overlay.Loading
 import com.cavies.pokedex.presentation.ui.home.common.HomeHeader
 import com.cavies.pokedex.presentation.ui.home.common.filter.FilterBottomSheet
 import com.cavies.pokedex.presentation.ui.home.common.filter.FilterDialog
+import com.cavies.pokedex.presentation.ui.home.common.filter.FilterItem
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(
-    viewModel: HomeViewModel = hiltViewModel()
-) {
+fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
     val state = viewModel.uiState
     val gridState = viewModel.gridState
 
     var categoryDialogVisible by remember { mutableStateOf(false) }
     var optionsSheetVisible by remember { mutableStateOf(false) }
 
-    LaunchedEffect(state.shouldResetScroll) {
-        if (state.shouldResetScroll) {
-            gridState.scrollToItem(0)
-            viewModel.consumeScrollResetFlag()
+    // Scroll reset
+    HandleScrollReset(state.shouldResetScroll, gridState) { viewModel.consumeScrollResetFlag() }
+
+    // Dialogs
+    CategoryFilterDialog(
+        visible = categoryDialogVisible,
+        onDismiss = { categoryDialogVisible = false },
+        onFilterSelected = { item ->
+            categoryDialogVisible = false
+            viewModel.onFilterItemSelected(item)
+            optionsSheetVisible = item.hasOptions
         }
-    }
+    )
 
-    if (categoryDialogVisible) {
-        FilterDialog(
-            onDismiss = { categoryDialogVisible = false },
-            onFilterSelected = { item ->
-                categoryDialogVisible = false
-                viewModel.onFilterItemSelected(item)
-
-                optionsSheetVisible = item.hasOptions
-            }
-        )
-    }
-
-    if (optionsSheetVisible) {
-        ModalBottomSheet(
-            onDismissRequest = { optionsSheetVisible = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        ) {
-            FilterBottomSheet(
-                optionsList = state.categorySelected,
-                selectedTypes = emptySet(),
-                onApply = { selectedList ->
-                    viewModel.filterByCategory(selectedList)
-                    optionsSheetVisible = false
-                }
-            )
+    OptionsBottomSheet(
+        visible = optionsSheetVisible,
+        optionsList = state.categorySelected,
+        onApply = { selectedList ->
+            viewModel.filterByCategory(selectedList)
+            optionsSheetVisible = false
         }
-    }
+    )
 
+    // UI
     Column(modifier = Modifier.fillMaxSize()) {
-
         HomeHeader(
             searchText = state.searchQuery,
             onSearchTextChange = viewModel::onSearchQueryChanged,
@@ -96,50 +84,96 @@ fun HomeScreen(
             onSortDesc = viewModel::sortDescending
         )
 
-        Box(modifier = Modifier.fillMaxSize()) {
+        PokemonGridWithFab(
+            state = state,
+            gridState = gridState,
+            onFavoriteClick = viewModel::onFavoriteClick
+        )
+    }
+}
 
-            when {
-                state.isLoading -> Loading()
-                state.error != null -> Snackbar { Text(state.error) }
-                else -> PokemonGrid(
-                    pokemons = state.filteredPokemons,
-                    gridState = gridState,
-                    onFavoriteClick = viewModel::onFavoriteClick
-                )
-            }
+@Composable
+private fun HandleScrollReset(
+    shouldReset: Boolean,
+    gridState: LazyGridState,
+    onConsumed: () -> Unit
+) {
+    LaunchedEffect(shouldReset) {
+        if (shouldReset) {
+            gridState.scrollToItem(0)
+            onConsumed()
+        }
+    }
+}
 
-            val showFab by remember {
-                derivedStateOf { gridState.firstVisibleItemIndex > 3 }
-            }
-            val scope = rememberCoroutineScope()
+@Composable
+private fun CategoryFilterDialog(
+    visible: Boolean,
+    onDismiss: () -> Unit,
+    onFilterSelected: (FilterItem) -> Unit
+) {
+    if (!visible) return
+    FilterDialog(onDismiss = onDismiss, onFilterSelected = onFilterSelected)
+}
 
-            this@Column.AnimatedVisibility(
-                visible = showFab,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp),
-                enter = slideInVertically { it } + fadeIn(),
-                exit = slideOutVertically { it } + fadeOut()
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun OptionsBottomSheet(
+    visible: Boolean,
+    optionsList: List<String>,
+    onApply: (List<String>) -> Unit
+) {
+    if (!visible) return
+    ModalBottomSheet(
+        onDismissRequest = { /* handled outside */ },
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ) {
+        FilterBottomSheet(
+            optionsList = optionsList,
+            selectedTypes = emptySet(),
+            onApply = onApply
+        )
+    }
+}
+
+@Composable
+private fun PokemonGridWithFab(
+    state: HomeUiState,
+    gridState: LazyGridState,
+    onFavoriteClick: (Pokemon) -> Unit
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        when {
+            state.isLoading -> Loading()
+            state.error != null -> Snackbar { Text(state.error) }
+            else -> PokemonGrid(
+                pokemons = state.filteredPokemons,
+                gridState = gridState,
+                onFavoriteClick = onFavoriteClick
+            )
+        }
+
+        val showFab by remember { derivedStateOf { gridState.firstVisibleItemIndex > 3 } }
+        val scope = rememberCoroutineScope()
+
+        AnimatedVisibility(
+            visible = showFab,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp),
+            enter = slideInVertically { it } + fadeIn(),
+            exit = slideOutVertically { it } + fadeOut()
+        ) {
+            FloatingActionButton(
+                onClick = { scope.launch { gridState.animateScrollToItem(0) } },
+                containerColor = Color(0xFFE53935),
+                contentColor = Color.White
             ) {
-                FloatingActionButton(
-                    onClick = {
-                        scope.launch {
-                            gridState.animateScrollToItem(
-                                index = 0
-                            )
-                        }
-                    },
-                    containerColor = Color(0xFFE53935),
-                    contentColor = Color.White,
-                    shape = CircleShape
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.KeyboardArrowUp,
-                        contentDescription = "Scroll to top",
-                        modifier = Modifier.size(28.dp),
-                        tint = Color.White
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowUp,
+                    contentDescription = "Scroll to top",
+                    modifier = Modifier.size(28.dp)
+                )
             }
         }
     }

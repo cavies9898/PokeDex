@@ -25,20 +25,6 @@ fun PokemonGrid(
     modifier: Modifier = Modifier,
     onFavoriteClick: (Pokemon) -> Unit
 ) {
-    val context = LocalContext.current
-
-    val imageLoader = remember {
-        ImageLoader.Builder(context)
-            .memoryCache {
-                MemoryCache.Builder(context)
-                    .maxSizePercent(0.1)
-                    .build()
-            }
-            .diskCachePolicy(CachePolicy.ENABLED)
-            .crossfade(true)
-            .build()
-    }
-
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         state = gridState,
@@ -50,7 +36,6 @@ fun PokemonGrid(
         items(pokemons, key = { it.id }) { pokemon ->
             PokemonCard(
                 pokemon = pokemon,
-                imageLoader = imageLoader,
                 onClickItem = {  },
                 onClickFavorite = { onFavoriteClick(pokemon) },
                 modifier = Modifier.animateItem()

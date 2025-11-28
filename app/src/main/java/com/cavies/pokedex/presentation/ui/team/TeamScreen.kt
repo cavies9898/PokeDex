@@ -13,6 +13,6 @@ fun TeamScreen() {
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Text("Pantalla de Equipo")
+
     }
 }

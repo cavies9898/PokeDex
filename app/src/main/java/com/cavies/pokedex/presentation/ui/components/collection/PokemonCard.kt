@@ -1,5 +1,6 @@
 package com.cavies.pokedex.presentation.ui.components.collection
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,20 +25,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow.Companion.Ellipsis
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.ImageLoader
-import coil.compose.AsyncImage
-import coil.request.CachePolicy
-import coil.request.ImageRequest
+import coil.compose.rememberAsyncImagePainter
 import com.cavies.pokedex.domain.model.Pokemon
 import com.cavies.pokedex.presentation.ui.components.colors.PokemonTypeColor
 
@@ -45,27 +41,16 @@ import com.cavies.pokedex.presentation.ui.components.colors.PokemonTypeColor
 fun PokemonCard(
     pokemon: Pokemon,
     modifier: Modifier,
-    imageLoader: ImageLoader,
     onClickItem: (pokemon: Pokemon) -> Unit,
     onClickFavorite: (pokemon: Pokemon) -> Unit
 ) {
 
-    val context = LocalContext.current
     val backgroundColor = PokemonTypeColor.get(pokemon.types.firstOrNull())
     val strongerColor = backgroundColor.copy(
         red = (backgroundColor.red * 0.9f),
         green = (backgroundColor.green * 0.9f),
         blue = (backgroundColor.blue * 0.9f)
     )
-    val imageRequest = remember(pokemon.imageUrl) {
-        ImageRequest.Builder(context)
-            .data(pokemon.imageUrl)
-            .diskCachePolicy(CachePolicy.ENABLED)
-            .memoryCachePolicy(CachePolicy.ENABLED)
-            .size(300, 300)
-            .crossfade(true)
-            .build()
-    }
 
     ElevatedCard(
         onClick = { onClickItem(pokemon) },
@@ -129,9 +114,8 @@ fun PokemonCard(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                AsyncImage(
-                    model = imageRequest,
-                    imageLoader = imageLoader,
+                Image(
+                    painter = rememberAsyncImagePainter(pokemon.imageUrl),
                     contentDescription = pokemon.name,
                     contentScale = ContentScale.Fit,
                     modifier = Modifier

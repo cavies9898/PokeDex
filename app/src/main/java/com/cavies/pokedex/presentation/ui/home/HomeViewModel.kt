@@ -20,30 +20,22 @@ import kotlinx.coroutines.launch
 class HomeViewModel @Inject constructor(
     private val getPokemons: GetPokemonsUseCase,
     private val toggleFavorite: ToggleFavoriteUseCase,
-    private val getCategories: GetCategoriesUseCase,
+    private val getCategories: GetCategoriesUseCase
 ) : ViewModel() {
 
-    // -------------------------------------------------------------
-    // STATE
-    // -------------------------------------------------------------
     var uiState by mutableStateOf(HomeUiState())
         private set
 
     val gridState = LazyGridState()
     private var cachedCategories: Categories? = null
 
-
-    // -------------------------------------------------------------
-    // INIT
-    // -------------------------------------------------------------
     init {
         observePokemons()
     }
 
-
-    // -------------------------------------------------------------
+    // ----------------------------
     // DATA FLOW
-    // -------------------------------------------------------------
+    // ----------------------------
     private fun observePokemons() {
         viewModelScope.launch {
             getPokemons().collect { list ->
@@ -60,28 +52,23 @@ class HomeViewModel @Inject constructor(
     private suspend fun getCategoriesCached() =
         cachedCategories ?: getCategories().also { cachedCategories = it }
 
-
-    // -------------------------------------------------------------
-    // FAVORITOS
-    // -------------------------------------------------------------
+    // ----------------------------
+    // FAVORITES
+    // ----------------------------
     fun onFavoriteClick(pokemon: Pokemon) {
-        viewModelScope.launch {
-            toggleFavorite(pokemon)
-        }
+        viewModelScope.launch { toggleFavorite(pokemon) }
     }
 
-
-    // -------------------------------------------------------------
+    // ----------------------------
     // SCROLL CONTROL
-    // -------------------------------------------------------------
+    // ----------------------------
     fun consumeScrollResetFlag() {
         uiState = uiState.copy(shouldResetScroll = false)
     }
 
-
-    // -------------------------------------------------------------
-    // BUSQUEDA
-    // -------------------------------------------------------------
+    // ----------------------------
+    // SEARCH
+    // ----------------------------
     fun onSearchQueryChanged(query: String) {
         uiState = uiState.copy(
             searchQuery = query,
@@ -90,10 +77,9 @@ class HomeViewModel @Inject constructor(
         applyFiltersAndSorting()
     }
 
-
-    // -------------------------------------------------------------
-    // FILTROS
-    // -------------------------------------------------------------
+    // ----------------------------
+    // FILTERS
+    // ----------------------------
     fun onFilterItemSelected(item: FilterItem) {
         viewModelScope.launch {
             uiState = uiState.copy(
@@ -143,10 +129,9 @@ class HomeViewModel @Inject constructor(
         applyFiltersAndSorting()
     }
 
-
-    // -------------------------------------------------------------
-    // ORDENAMIENTO
-    // -------------------------------------------------------------
+    // ----------------------------
+    // SORTING
+    // ----------------------------
     fun sortAscending() = applySorting(true)
     fun sortDescending() = applySorting(false)
 
@@ -177,27 +162,27 @@ class HomeViewModel @Inject constructor(
         )
     }
 
-
-    // -------------------------------------------------------------
-    // APLICAR FILTROS + BUSQUEDA + ORDENAMIENTO
-    // -------------------------------------------------------------
+    // ----------------------------
+    // APPLY FILTERS + SEARCH + SORT
+    // ----------------------------
     private fun applyFiltersAndSorting() {
-        val filter = uiState.currentFilterItem
-        val query = uiState.searchQuery.trim().lowercase()
-        val selected = uiState.categorySelected.toSet()
-
-        val filtered = uiState.pokemons.filter { p ->
-            val matchesFilter = when {
-                filter?.selector == null -> true
-                selected.isEmpty() -> true
-                else -> filter.selector(p).any(selected::contains)
-            }
-
-            val matchesSearch = p.name.contains(query, ignoreCase = true)
-
-            matchesFilter && matchesSearch
-        }
+        val filtered = uiState.pokemons
+            .let { applySearchFilter(it, uiState.searchQuery) }
+            .let { applyCategoryFilter(it, uiState.currentFilterItem, uiState.categorySelected) }
 
         uiState = uiState.copy(filteredPokemons = filtered)
+    }
+
+    private fun applySearchFilter(list: List<Pokemon>, query: String): List<Pokemon> =
+        if (query.isBlank()) list else list.filter { it.name.contains(query, ignoreCase = true) }
+
+    private fun applyCategoryFilter(
+        list: List<Pokemon>,
+        filter: FilterItem?,
+        selected: List<String>
+    ): List<Pokemon> {
+        if (filter?.selector == null || selected.isEmpty()) return list
+        val selectedSet = selected.toSet()
+        return list.filter { filter.selector(it).any(selectedSet::contains) }
     }
 }
