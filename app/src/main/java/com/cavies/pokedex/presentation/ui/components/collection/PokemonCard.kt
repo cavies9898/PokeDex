@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.cavies.pokedex.domain.model.Pokemon
+import com.cavies.pokedex.presentation.ui.components.animations.shrinkClick
 import com.cavies.pokedex.presentation.ui.components.colors.PokemonTypeColor
 
 @Composable
@@ -76,6 +77,7 @@ fun PokemonCard(
 
             Box(
                 modifier = Modifier
+                    .shrinkClick { onClickFavorite(pokemon) }
                     .align(Alignment.TopEnd)
                     .padding(8.dp)
                     .size(42.dp)
@@ -86,7 +88,7 @@ fun PokemonCard(
                 contentAlignment = Alignment.Center
             ) {
                 IconButton(
-                    onClick = { onClickFavorite(pokemon) },
+                    onClick = {},
                     modifier = Modifier.size(28.dp)
                 ) {
                     Icon(

@@ -1,11 +1,24 @@
 package com.cavies.pokedex.presentation.navigation
 
-object Routes {
-    const val SPLASH = "splash"
-    const val HOME = "home"
-    const val TEAM = "team"
-    const val FAVORITES = "favorites"
-    const val SETTINGS = "settings"
-    const val DETAIL = "detail"
-}
+import kotlinx.serialization.Serializable
 
+@Serializable
+object Splash
+@Serializable
+object Home
+@Serializable
+object Team
+@Serializable
+object TeamStack
+@Serializable
+object Favorites
+@Serializable
+object Settings
+
+
+object TeamScreens {
+    const val TEAM = "Equipo"
+    const val STATS = "Estadísticas"
+    const val COVERAGE = "Cobertura"
+    const val ANALYSIS = "Análisis"
+}

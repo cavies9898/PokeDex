@@ -17,7 +17,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
@@ -25,17 +24,17 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.cavies.pokedex.R
 
 @Composable
-fun SplashScreen() {
-    val viewModel: SplashViewModel = hiltViewModel()
+fun SplashScreen(
+    navigateToHome: () -> Unit
+) {
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.pokeball))
     val progress by animateLottieCompositionAsState(composition)
 
     LaunchedEffect(progress) {
         if (progress == 1f) {
-            viewModel.onSplashFinished()
+            navigateToHome()
         }
     }
-
 
     Box(
         modifier = Modifier
@@ -65,6 +64,4 @@ fun SplashScreen() {
             )
         }
     }
-
-
 }

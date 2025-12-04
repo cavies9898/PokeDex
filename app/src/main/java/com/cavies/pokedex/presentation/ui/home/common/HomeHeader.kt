@@ -38,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.cavies.pokedex.presentation.ui.components.animations.shrinkClick
 import com.cavies.pokedex.presentation.ui.components.shapes.RoundedShape
 
 @Composable
@@ -140,8 +141,8 @@ fun FilterButton(
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(50.dp))
-            .clickable { onFilterClick() }
             .background(Color.White.copy(alpha = 0.3f))
+            .shrinkClick { onFilterClick() }
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

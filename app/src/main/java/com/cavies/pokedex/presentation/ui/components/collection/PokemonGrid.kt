@@ -8,13 +8,8 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import coil.ImageLoader
-import coil.memory.MemoryCache
-import coil.request.CachePolicy
 import com.cavies.pokedex.domain.model.Pokemon
 
 
@@ -36,9 +31,9 @@ fun PokemonGrid(
         items(pokemons, key = { it.id }) { pokemon ->
             PokemonCard(
                 pokemon = pokemon,
-                onClickItem = {  },
+                onClickItem = { },
                 onClickFavorite = { onFavoriteClick(pokemon) },
-                modifier = Modifier.animateItem()
+                modifier = Modifier
             )
         }
     }

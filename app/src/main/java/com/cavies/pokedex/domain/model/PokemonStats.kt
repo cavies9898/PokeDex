@@ -8,4 +8,6 @@ data class PokemonStats(
     val specialDefense: Int = 0,
     val speed: Int = 0,
     val total: Int = 0
-)
+) {
+    fun toList() = listOf(hp, attack, defense, specialAttack, specialDefense, speed)
+}

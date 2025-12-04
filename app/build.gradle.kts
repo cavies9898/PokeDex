@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.dagger.hilt)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -72,6 +73,7 @@ dependencies {
 
     // Navigation Compose
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.serialization.json)
 
     // Lottie Files
     implementation(libs.lottie.compose)
@@ -94,12 +96,15 @@ dependencies {
     implementation (libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
-    implementation("io.coil-kt:coil-compose:2.5.0")
+    implementation(libs.coil.compose)
 
     //Pager
-    implementation("androidx.compose.foundation:foundation:1.9.4")
+    implementation(libs.androidx.compose.foundation)
 
-    //Chunks
-    implementation("androidx.paging:paging-runtime:3.2.0")
-    implementation("androidx.paging:paging-compose:1.0.0-alpha20")
+    //Paging
+    implementation(libs.androidx.paging.runtime)
+    implementation(libs.androidx.paging.compose)
+
+    //UISystem
+    implementation(libs.accompanist.systemuicontroller)
 }

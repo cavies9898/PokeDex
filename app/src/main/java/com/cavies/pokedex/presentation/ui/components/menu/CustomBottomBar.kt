@@ -2,39 +2,47 @@ package com.cavies.pokedex.presentation.ui.components.menu
 
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.cavies.pokedex.presentation.navigation.Routes
+import com.cavies.pokedex.presentation.navigation.Home
 
 
 @Composable
-fun CustomBottomBar(navController: NavHostController) {
+fun BottomBarNavigation(navController: NavHostController) {
 
-    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    val currentRoute = navController
+        .currentBackStackEntryAsState()
+        .value
+        ?.destination
+        ?.route
 
-    NavigationBar {
+    NavigationBar(windowInsets = NavigationBarDefaults.windowInsets) {
         bottomBarItems.forEach { item ->
+
+            val isSelected = currentRoute == item.route::class.qualifiedName
+
             NavigationBarItem(
-                selected = currentRoute == item.route,
+                selected = isSelected,
                 onClick = {
-                    if (currentRoute != item.route) {
+                    if (!isSelected) {
                         navController.navigate(item.route) {
+                            popUpTo(Home) { saveState = true }
                             launchSingleTop = true
                             restoreState = true
-                            popUpTo(Routes.HOME) { saveState = true }
                         }
                     }
                 },
-                label = { Text(item.title) },
                 icon = {
                     Icon(
-                        imageVector = if (currentRoute == item.route) item.iconSelected else item.icon,
+                        imageVector = if (isSelected) item.iconSelected else item.icon,
                         contentDescription = item.title
                     )
-                }
+                },
+                label = { Text(item.title) }
             )
         }
     }
